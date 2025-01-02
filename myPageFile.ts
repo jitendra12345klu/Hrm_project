@@ -1,50 +1,154 @@
-import { expect, Page } from "@playwright/test";
+import { expect, Locator, Page } from "@playwright/test";
 import PlaywrightWrapper from "../helper/wrapper/PlaywrightWrappers";
 import { fixture } from "../hooks/pageFixture";
+import { Validation } from "./validationPage";
 
 export class LogInPage {
 
+    validation: Validation;
+
     async navigateToLoginPage() {
-        await fixture.page.goto('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login', { timeout: 10000 });
-        // await fixture.page.waitForTimeout(4000);
+    fixture.page.goto(process.env.BASEURL);
     }
 
-    async ValidateLogInPageElements() {
-        // 15 web elements
-        try {
-            await fixture.page.getByRole('img', { name: 'company-branding' }).isVisible();
-            await fixture.page.getByRole('img', { name: 'orangehrm-logo' }).isVisible();
-            await fixture.page.getByRole('heading', { name: 'Login' }).isVisible();
-            await fixture.page.getByText('Username : Admin').isVisible();
-            await fixture.page.getByText('Password : admin123').isVisible();
-            await fixture.page.locator('div').filter({ hasText: /^Username$/ }).nth(2).isVisible();
-            await fixture.page.getByPlaceholder('Username').isVisible();
-            await fixture.page.locator('div').filter({ hasText: /^Password$/ }).nth(2).isVisible();
-            await fixture.page.getByPlaceholder('Password').isVisible();
-            await fixture.page.getByRole('button', { name: 'Login' }).isVisible();
-            await fixture.page.getByText('Forgot your password?').isVisible();
-            await fixture.page.getByRole('link').first().isVisible();
-            await fixture.page.getByRole('link').nth(1).isVisible();
-            await fixture.page.getByRole('link').nth(2).isVisible();
-            await fixture.page.getByRole('link').nth(3).isVisible();
-            console.log(' Success! Web element found on the page');
+    async ValidateLogInPageWebElements() {
+        const locators = [
+            fixture.page.getByRole('img', { name: 'company-branding' }),
+            fixture.page.getByRole('img', { name: 'orangehrm-logo' }),
+            fixture.page.getByRole('heading', { name: 'LogOut' }),
+            fixture.page.getByText('Username : Admin'),
+            fixture.page.getByText('Password : admin123'),
+            fixture.page.getByText('Username', { exact: true }),
+            fixture.page.getByPlaceholder('Username'),
+            fixture.page.getByText('Password', { exact: true }),
+            fixture.page.getByPlaceholder('Password'),
+            fixture.page.getByRole('button', { name: 'Login' }),
+            fixture.page.getByText('Forgot your password?'),
+            fixture.page.getByRole('link').first(),
+            fixture.page.getByRole('link').nth(1),
+            fixture.page.getByRole('link').nth(2),
+            fixture.page.getByRole('link').nth(3)
+        ];
+        await this.validation.ValidateWebElements(locators);
+    }
+
+
+
+
+
+
+
+
+
+    //Functionality - 2
+    //Validation of web element on the page
+    async ValidatePageWebElement(locator: Locator): Promise<boolean> {
+        console.log(`Validating`);
+        const isVisible: boolean = await locator.isVisible();
+        if (isVisible) {
+            return true;
         }
-        catch {
-            console.log(' Failure! Web element not found');
+        else {
+            return false;
         }
     }
 
+    //Validation of web elements on the page
+    async ValidatePageWebElements(locators: Locator[]) {
+        let visibleElements: number = 0;
+        let totalElements: number = 0;
+        for (const a of locators) {
+            const isVisible: boolean = await a.isVisible();
+            if (isVisible) {
+                visibleElements = visibleElements + 1;
+            }
+            else {
+                console.log(`Element ${a} is not visible on the page`);
+            }
+            totalElements = totalElements + 1;
+        }
+        console.log(`Found ${visibleElements} elements on the page out of ${totalElements} elements`);
+    }
+
+
+    // async ValidatePageWebElements(locators: Locator[]) {
+    //     for (const a of locators) {
+    //         expect(await a).toBeVisible();
+    //     }
+
+    // }
+
+    //Functionality - 3
+    //Log in functionality
     async logInFunctionality(UserName: string, Password: string) {
         await fixture.page.getByPlaceholder('Username').fill(UserName);
         await fixture.page.getByPlaceholder('Password').fill(Password);
         await fixture.page.getByRole('button', { name: 'Login' }).click();
+        //await fixture.page.waitForTimeout(2000);
         if (await fixture.page.getByRole('heading', { name: 'Dashboard' }).isVisible()) {
-            console.log(' Success! User is able to login');
+            console.log(' Success! User is able to login and redirected to dashboard page');
         }
-        else {
+        else if (await fixture.page.getByText('Invalid credentials').isVisible()) {
             console.log(' Failure! User is not able to login due to invalid credentials');
         }
+        else {
+            console.log(' Failure! User is not able to login due to some other reason');
+        }
     }
+
+    //Functionality - 4
+    //Forget password functionality
+    async forgetPasswordFunctionality(username) {
+
+        await fixture.page.getByText('Forgot your password?').click();
+
+        //Forget password button
+        const forgetPasswordButton = await fixture.page.getByRole('button', { name: 'Reset Password' });
+        if (this.ValidatePageWebElement(forgetPasswordButton)) {
+            console.log(' Success! Forget password button Working');
+        }
+        else {
+            console.log(' Failure! Forget password button not Working');
+        }
+
+        //cancel button
+        await fixture.page.getByRole('button', { name: 'Cancel' }).click();
+        const cancelButton = await fixture.page.getByRole('button', { name: 'Cancel' });
+        if (this.ValidatePageWebElement(cancelButton)) {
+            console.log(' Success! cancel button Working');
+        }
+        else {
+            console.log(' Failure! cancel button not Working');
+        }
+
+        await fixture.page.getByText('Forgot your password?').click();
+
+        //reset password button
+        await fixture.page.getByPlaceholder('Username').fill(username);
+        await fixture.page.getByRole('button', { name: 'Reset Password' }).click();
+        const resetButton = await fixture.page.getByRole('button', { name: 'Reset Password' });
+        if (this.ValidatePageWebElement(resetButton)) {
+            console.log(' Success! reset button Working');
+        }
+        else {
+            console.log(' Failure! Reset button not Working');
+        }
+    }
+    //Forget password functionality validation
+    async forgetPasswordValidation() {
+        const Validation = await fixture.page.getByRole('heading', { name: 'Reset Password link sent successfully' });
+        if (this.ValidatePageWebElement(Validation)) {
+            console.log(' Success! Reset password link sent successfully');
+        }
+        else {
+            console.log(' Failure! Reset password link not sent successfully');
+        }
+    }
+
+
+
+
+
 
     async logInPageFooterIcons() {
         const [page1] = await Promise.all([
@@ -84,24 +188,119 @@ export class LogInPage {
         console.log(' Success! User is redirected to youtube page');
     }
 
-    async forgetPasswordFunctionality(username) {
-        await fixture.page.getByText('Forgot your password?').click();
+    async ValidateDashboardPageWebElements() {
 
-        if (await fixture.page.getByRole('heading', { name: 'Reset Password' }).isVisible()){
-            console.log(' Success! User is redirected to reset password page');
+        //List of web elements on the dashboard page to be validated
+        const elements = [
+            //top 5 elements
+            fixture.page.getByRole('heading', { name: 'Dashboard' }),
+            fixture.page.getByRole('button', { name: 'Upgrade' }),
+            fixture.page.getByRole('banner').getByRole('img', { name: 'profile picture' }),
+            fixture.page.getAttribute('class', 'oxd-userdropdown-name'),
+            //fixture.page.getByRole('listitem').filter({ hasText: 'OMAR Mohamed' }).locator('i'),
+            fixture.page.getByRole('listitem').filter({ hasText: 'John Doe' }).locator('i'),
+
+            //left side 15 elements
+            fixture.page.getByRole('button', { name: '' }),
+            fixture.page.getByRole('link', { name: 'client brand banner' }),
+            fixture.page.getByPlaceholder('Search'),
+            fixture.page.getByRole('link', { name: 'Admin' }),
+            fixture.page.getByRole('link', { name: 'PIM' }),
+            fixture.page.getByRole('link', { name: 'Leave' }),
+            fixture.page.getByRole('link', { name: 'Time' }),
+            fixture.page.getByRole('link', { name: 'Recruitment' }),
+            fixture.page.getByRole('link', { name: 'My Info' }),
+            fixture.page.getByRole('link', { name: 'Performance' }),
+            fixture.page.getByRole('link', { name: 'Dashboard' }),
+            fixture.page.getByRole('link', { name: 'Directory' }),
+            fixture.page.getByRole('link', { name: 'Maintenance' }),
+            fixture.page.getByRole('link', { name: 'Claim' }),
+            fixture.page.getByRole('link', { name: 'Buzz' })
+        ];
+
+        // await this.ValidatePageWebElements(elements);
+    }
+
+    async dashboardProfileDropDown() {
+
+        //Profile
+        //fixture.page.getByText('Shehan user').click();
+        await fixture.page.getByText('Shehan Doe').click();
+        if (await fixture.page.getByRole('menuitem', { name: 'About' }).isVisible()) {
+            console.log(' Success! ProfileDropDown is working');
         }
         else {
-            console.log(' Failure! User is not redirected to reset password page');
+            console.log(' Failure! ProfileDropDown is not working');
         }
-        await fixture.page.getByPlaceholder('Username').fill(username);
-        await fixture.page.getByRole('button', { name: 'Reset Password' }).click();
-    }
-    async forgetPasswordValidation() {
-        if (await fixture.page.getByRole('heading', { name: 'Reset Password link sent successfully' }).isVisible()) {
-            console.log(' Success! Reset password link sent successfully');
+
+        //About
+        await fixture.page.getByText('Shehan Doe').click();
+        await fixture.page.getByRole('menuitem', { name: 'About' }).click();
+        if (await fixture.page.getByRole('heading', { name: 'About' }).isVisible()) {
+            console.log(' Success! About is working');
         }
         else {
-            console.log(' Failure! Reset password link not sent successfully');
+            console.log(' Failure! About is not working');
+        }
+        const closeButton = fixture.page.getByRole('button', { name: '×' });
+        await closeButton.click();
+
+        //await fixture.page.getByText('John Doe').click();
+        //Support
+        console.log('Support 1');
+        await fixture.page.getByRole('menuitem', { name: 'Support' }).click();
+        //await fixture.page.waitForLoadState();
+        console.log('Support 2');
+        if (await fixture.page.getByRole('heading', { name: 'Getting Started with OrangeHRM' }).isVisible()) {
+            console.log(' Success! Support is working');
+        }
+        else {
+            console.log(' Failure! Support is not working');
+        }
+
+        await fixture.page.getByText('John Doe').click();
+        console.log('Change Password');
+        //Change Password
+        await fixture.page.getByRole('menuitem', { name: 'Change Password' }).click();
+        if (await fixture.page.getByRole('heading', { name: 'Update Password' }).isVisible()) {
+            console.log(' Success! Change Password is working');
+        }
+        else {
+            console.log(' Failure! Change Password is not working');
+        }
+
+
+        await fixture.page.getByText('John Doe').click();
+        //logout
+        fixture.page.getByRole('menuitem', { name: 'Logout' }).click();
+        if (await fixture.page.getByRole('heading', { name: 'Login' }).isVisible()) {
+            console.log(' Success! Logout is working');
+        }
+        else {
+            console.log(' Failure! Logout is not working');
         }
     }
+
+
+    async navigateToApplyPage() {
+        await fixture.page.getByRole('link', { name: 'Leave' }).click();
+    }
+
+    async ValidateApplyPageWebElements() {
+        //List of web elements on the apply page to be validated
+        const elements = [
+
+            await fixture.page.getByRole('link', { name: 'Apply' }),
+            await fixture.page.getByRole('link', { name: 'My Leave' }),
+            await fixture.page.getByRole('listitem').filter({ hasText: 'Entitlements' }),
+            await fixture.page.getByRole('listitem').filter({ hasText: 'Reports' }),
+            await fixture.page.getByText('Configure'),
+            await fixture.page.getByRole('link', { name: 'Leave List' }),
+            await fixture.page.getByRole('link', { name: 'Assign Leave' })
+        ];
+
+        await this.ValidatePageWebElements(elements);
+    }
+
+
 }

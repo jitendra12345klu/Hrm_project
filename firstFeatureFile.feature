@@ -1,7 +1,7 @@
 @LogInPageFeature
 Feature: LogIn Page
     Background:
-        Given User Navigate to LogIn Page
+        Given User Navigate to 'https://opensource-demo.orangehrmlive.com/web/index.php/auth/login'
 
     @LogInPageElements @tc01
     Scenario: Verify LogIn Page Elements
@@ -28,3 +28,13 @@ Feature: LogIn Page
         Examples:
             | username |
             | Admin    |
+    @dashboardElements @tc05
+    Scenario: Verify Dashboard Elements
+        When User is on LogIn Page
+        Then User enters "Admin" and "admin123" Clicks on LogIn Button
+        And User should see Dashboard Elements
+    @dashboardProfileDropDown @tc06
+    Scenario: Verify Profile DropDown
+        When User is on LogIn Page
+        Then User enters "Admin" and "admin123" Clicks on LogIn Button
+        And User should see Profile DropDown
